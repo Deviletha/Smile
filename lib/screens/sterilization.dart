@@ -19,11 +19,13 @@ class SterilizationPage extends StatefulWidget {
 class _SterilizationPageState extends State<SterilizationPage> {
   ScanResult? scanResult;
 
+  int? _selectedQuantity;
+
   var _useAutoFocus = true;
   var _autoEnableFlash = false;
 
   bool isLoading = true;
-  String? sterilisationId;
+  String? stockId;
   String? productId;
 
   String? data;
@@ -70,6 +72,7 @@ class _SterilizationPageState extends State<SterilizationPage> {
         productList1 = productList!["data"];
         finalProductList = productList1!["stockDetails"];
 
+        stockId = finalProductList![0]["id"].toString();
         if (kDebugMode) {
           print(finalProductList);
         }
@@ -79,19 +82,21 @@ class _SterilizationPageState extends State<SterilizationPage> {
     }
   }
 
-  apiForUpdateSterilisation(String prId) async {
+  apiForUpdateSterilisation(String prId, int selectedQuantity, String stckId) async {
     String? formattedTime = selectedTime?.format(context);
-    var response = await ApiHelper()
-        .post(endpoint: "sterilizations/StartUpdateSterilization", body: {
-      "date": startDate.toString(),
-      "time_in": formattedTime,
-      "time_out": "",
-      "qty": _quantityController.text.toString(),
-      "product": prId,
-      "stock_id": "",
-      "user_id": "1",
-      "company_id": "12",
-    }).catchError((err) {});
+    var response = await ApiHelper().post(
+      endpoint: "sterilizations/StartUpdateSterilization",
+      body: {
+        "date": startDate.toString(),
+        "time_in": formattedTime,
+        "time_out": "",
+        "qty": selectedQuantity.toString(),  // Use the selected quantity
+        "product": prId,
+        "stock_id": stckId,
+        "user_id": "1",
+        "company_id": "12",
+      },
+    ).catchError((err) {});
 
     setState(() {
       isLoading = false;
@@ -116,6 +121,7 @@ class _SterilizationPageState extends State<SterilizationPage> {
       debugPrint('api failed:');
     }
   }
+
 
   // Variable to store the selected time
   TimeOfDay? selectedTime = TimeOfDay.now();
@@ -236,6 +242,7 @@ class _SterilizationPageState extends State<SterilizationPage> {
 
       if (scanResult != null && scanResult!.rawContent.isNotEmpty) {
         productId = scanResult!.rawContent.toString();
+
         await apiForInSterilisation(); // Wait for API call to complete
         showUpdateSterilisationDialog();
       }
@@ -251,7 +258,11 @@ class _SterilizationPageState extends State<SterilizationPage> {
     }
   }
 
+  // Inside the showUpdateSterilisationDialog() method
   void showUpdateSterilisationDialog() {
+    List<int> quantityValues = List.generate(
+        finalProductList![0]["qty"] as int, (index) => index + 1);
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -263,13 +274,13 @@ class _SterilizationPageState extends State<SterilizationPage> {
               color: Colors.blue,
             ),
           )
-              :  Column(
+              : Column(
             children: <Widget>[
               Container(
                 decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
                     borderRadius: BorderRadius.all(Radius.circular(15)),
-                    color: Colors.grey
-                ),
+                    color: Colors.grey.shade200),
                 width: double.infinity,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -326,8 +337,7 @@ class _SterilizationPageState extends State<SterilizationPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Time In",
-                                  style: TextStyle(fontSize: 10)),
+                              Text("Time In", style: TextStyle(fontSize: 10)),
                               SizedBox(
                                 height: 3,
                               ),
@@ -347,16 +357,20 @@ class _SterilizationPageState extends State<SterilizationPage> {
                 ),
               ),
               SizedBox(height: 10),
-              TextFormField(
-                maxLines: 1,
-                controller: _quantityController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  labelText: "Quantity",
-                ),
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.next,
+              DropdownButton<int>(
+                value: _selectedQuantity, // Update this line
+                onChanged: (selectedQuantity) {
+                  setState(() {
+                    // Update the selected quantity in the state
+                    _selectedQuantity = selectedQuantity!;
+                  });
+                },
+                items: quantityValues.map((value) {
+                  return DropdownMenuItem<int>(
+                    value: value,
+                    child: Text(value.toString()),
+                  );
+                }).toList(),
               ),
             ],
           ),
@@ -370,12 +384,11 @@ class _SterilizationPageState extends State<SterilizationPage> {
             TextButton(
               child: Text('Update'),
               onPressed: () {
-                if (_quantityController.text.isNotEmpty) {
-                  apiForUpdateSterilisation(
-                      productId.toString());
+                if (_selectedQuantity != null) {
+                  apiForUpdateSterilisation(productId.toString(), _selectedQuantity!, stockId.toString());
                   Navigator.of(context).pop();
                 } else {
-                  // Show an error message or handle the case where quantity is empty.
+                  // Show an error message or handle the case where the quantity is not selected.
                 }
               },
             ),
@@ -384,139 +397,141 @@ class _SterilizationPageState extends State<SterilizationPage> {
       },
     );
   }
-  // void showUpdateSterilisationDialog() {
+
+
+// void showUpdateSterilisationDialog() {
   //   showDialog(
   //     context: context,
   //     builder: (BuildContext context) {
-  //       return  AlertDialog(
-  //               title: Text('Update Sterilization'),
-  //               content:
-  //               isLoading
-  //                   ? Center(
-  //                   child:
-  //                   CircularProgressIndicator(
-  //                     color: Colors.blue,
-  //                   ))
-  //                   :
-  //               Column(
-  //                 children: <Widget>[
-  //                   Container(
-  //                     decoration: BoxDecoration(
-  //                       borderRadius: BorderRadius.all(Radius.circular(15)),
-  //                       color: Colors.grey
-  //                     ),
-  //                     width: double.infinity,
-  //                     child: Padding(
-  //                       padding: const EdgeInsets.all(8.0),
-  //                       child: Column(
-  //                         crossAxisAlignment: CrossAxisAlignment.start,
-  //                         mainAxisAlignment: MainAxisAlignment.start,
-  //                         children: [
-  //                           Text(
-  //                             "Product name : ${finalProductList![0]["productName"]}",
-  //                             style: TextStyle(
-  //                                 fontWeight: FontWeight.bold,
-  //                                 fontSize: 15,
-  //                               ),
-  //                           ),
-  //                           SizedBox(
-  //                             height: 10,
-  //                           ),
-  //                           Text(
-  //                             "Quantity : ${finalProductList![0]["qty"]}",
-  //                             style: TextStyle(fontSize: 15),
-  //                           ),
-  //                         ],
-  //                       ),
-  //                     ),
-  //                   ),
-  //                   SizedBox(
-  //                     height: 10,
-  //                   ),
-  //                   AssignTaskTileDate(
-  //                     title: "Date",
-  //                     date: startDate ?? 'date',
-  //                     onTap: () {
-  //                       _showDatePickerStart();
-  //                     },
-  //                   ),
-  //                   SizedBox(height: 10),
-  //                   Padding(
-  //                     padding: const EdgeInsets.only(bottom: 10),
-  //                     child: InkWell(
-  //                       onTap: () async {
-  //                         await _selectTime(
-  //                             context); // Pass context and await the result
-  //                       },
-  //                       child: Container(
-  //                         decoration: BoxDecoration(
-  //                             borderRadius:
-  //                                 BorderRadius.all(Radius.circular(10)),
-  //                             border: Border.all(color: Colors.grey)),
-  //                         child: Padding(
-  //                           padding: const EdgeInsets.all(8.0),
-  //                           child: Row(
-  //                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                             children: [
-  //                               Column(
-  //                                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                                 children: [
-  //                                   Text("Time In",
-  //                                       style: TextStyle(fontSize: 10)),
-  //                                   SizedBox(
-  //                                     height: 3,
-  //                                   ),
-  //                                   Text(
-  //                                       selectedTime != null
-  //                                           ? selectedTime.toString()
-  //                                           : 'time',
-  //                                       style: TextStyle(fontSize: 10)),
-  //                                 ],
-  //                               ),
-  //                               SizedBox(width: 3),
-  //                               Icon(Icons.alarm, size: 30),
-  //                             ],
-  //                           ),
-  //                         ),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                   SizedBox(height: 10),
-  //                   TextFormField(
-  //                     maxLines: 1,
-  //                     controller: _quantityController,
-  //                     decoration: InputDecoration(
-  //                       border: OutlineInputBorder(
-  //                           borderRadius: BorderRadius.circular(10)),
-  //                       labelText: "Quantity",
-  //                     ),
-  //                     keyboardType: TextInputType.number,
-  //                     textInputAction: TextInputAction.next,
-  //                   ),
-  //                 ],
+  //       return AlertDialog(
+  //         title: Text('Update Sterilization'),
+  //         content: isLoading
+  //             ? Center(
+  //           child: CircularProgressIndicator(
+  //             color: Colors.blue,
+  //           ),
+  //         )
+  //             :  Column(
+  //           children: <Widget>[
+  //             Container(
+  //               decoration: BoxDecoration(
+  //                 border: Border.all(color: Colors.grey),
+  //                   borderRadius: BorderRadius.all(Radius.circular(15)),
+  //                   color: Colors.grey.shade200
   //               ),
-  //               actions: <Widget>[
-  //                 TextButton(
-  //                   child: Text('Cancel'),
-  //                   onPressed: () {
-  //                     Navigator.of(context).pop();
-  //                   },
+  //               width: double.infinity,
+  //               child: Padding(
+  //                 padding: const EdgeInsets.all(8.0),
+  //                 child: Column(
+  //                   crossAxisAlignment: CrossAxisAlignment.start,
+  //                   mainAxisAlignment: MainAxisAlignment.start,
+  //                   children: [
+  //                     Text(
+  //                       "Product name : ${finalProductList![0]["productName"]}",
+  //                       style: TextStyle(
+  //                         fontWeight: FontWeight.bold,
+  //                         fontSize: 15,
+  //                       ),
+  //                     ),
+  //                     SizedBox(
+  //                       height: 10,
+  //                     ),
+  //                     Text(
+  //                       "Quantity : ${finalProductList![0]["qty"]}",
+  //                       style: TextStyle(fontSize: 15),
+  //                     ),
+  //                   ],
   //                 ),
-  //                 TextButton(
-  //                   child: Text('Update'),
-  //                   onPressed: () {
-  //                     if (_quantityController.text.isNotEmpty) {
-  //                       apiForUpdateSterilisation(
-  //                          productId.toString());
-  //                       Navigator.of(context).pop();
-  //                     } else {
-  //                       // Show an error message or handle the case where quantity is empty.
-  //                     }
-  //                   },
+  //               ),
+  //             ),
+  //             SizedBox(
+  //               height: 10,
+  //             ),
+  //             AssignTaskTileDate(
+  //               title: "Date",
+  //               date: startDate ?? 'date',
+  //               onTap: () {
+  //                 _showDatePickerStart();
+  //               },
+  //             ),
+  //             SizedBox(height: 10),
+  //             Padding(
+  //               padding: const EdgeInsets.only(bottom: 10),
+  //               child: InkWell(
+  //                 onTap: () async {
+  //                   await _selectTime(
+  //                       context); // Pass context and await the result
+  //                 },
+  //                 child: Container(
+  //                   decoration: BoxDecoration(
+  //                       borderRadius:
+  //                       BorderRadius.all(Radius.circular(10)),
+  //                       border: Border.all(color: Colors.grey)),
+  //                   child: Padding(
+  //                     padding: const EdgeInsets.all(8.0),
+  //                     child: Row(
+  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                       children: [
+  //                         Column(
+  //                           crossAxisAlignment: CrossAxisAlignment.start,
+  //                           children: [
+  //                             Text("Time In",
+  //                                 style: TextStyle(fontSize: 10)),
+  //                             SizedBox(
+  //                               height: 3,
+  //                             ),
+  //                             Text(
+  //                                 selectedTime != null
+  //                                     ? selectedTime.toString()
+  //                                     : 'time',
+  //                                 style: TextStyle(fontSize: 10)),
+  //                           ],
+  //                         ),
+  //                         SizedBox(width: 3),
+  //                         Icon(Icons.alarm, size: 30),
+  //                       ],
+  //                     ),
+  //                   ),
   //                 ),
-  //               ],
-  //             );
+  //               ),
+  //             ),
+  //             SizedBox(height: 10),
+  //             TextFormField(
+  //               maxLines: 1,
+  //               controller: _quantityController,
+  //               decoration: InputDecoration(
+  //                 border: OutlineInputBorder(
+  //                     borderRadius: BorderRadius.circular(10)),
+  //                 labelText: "Quantity",
+  //               ),
+  //               keyboardType: TextInputType.number,
+  //               textInputAction: TextInputAction.next,
+  //             ),
+  //           ],
+  //         ),
+  //         actions: <Widget>[
+  //           TextButton(
+  //             child: Text('Cancel'),
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //           TextButton(
+  //             child: Text('Update'),
+  //             onPressed: () {
+  //               if (_quantityController.text.isNotEmpty) {
+  //                 apiForUpdateSterilisation(
+  //                     productId.toString());
+  //                 Navigator.of(context).pop();
+  //               } else {
+  //                 // Show an error message or handle the case where quantity is empty.
+  //               }
+  //             },
+  //           ),
+  //         ],
+  //       );
   //     },
   //   );
   // }
+
 }

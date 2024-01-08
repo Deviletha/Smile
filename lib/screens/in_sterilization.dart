@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../Config/api_helper.dart';
 
@@ -89,6 +90,14 @@ class _InSterilizationPageState extends State<InSterilizationPage> {
         apiForInSterilisation();
         if (kDebugMode) {
           print(response);
+          Fluttertoast.showToast(
+            msg: "Success",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.SNACKBAR,
+            timeInSecForIosWeb: 1,
+            textColor: Colors.white,
+            fontSize: 16.0,
+          );
         }
       });
     } else {
