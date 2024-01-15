@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 
 const String baseUrl =
-    'https://smileapi.hawkssolutions.com/public/v1/';
+    'https://smile.hawkssolutions.com/basicapi/public/v1/';
 
 class ApiHelper {
   var client = http.Client();

@@ -198,7 +198,7 @@ class _InSterilizationPageState extends State<InSterilizationPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
                         )),
-                    child: Text("Finish"),
+                    child: Text("Finish", style: TextStyle(color: Colors.white),),
                   ),
                 ],
               ),

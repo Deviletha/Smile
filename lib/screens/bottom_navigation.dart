@@ -37,7 +37,8 @@ class _BottomNavState extends State<BottomNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        clipBehavior: Clip.hardEdge,
+        shape: CircleBorder(),
+        clipBehavior: Clip.none,
         // isExtended: true,
         mini: false,
         backgroundColor: Colors.white,

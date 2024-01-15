@@ -31,15 +31,15 @@ class AssignTaskTileDate extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,style: TextStyle(fontSize: 10),),
+                    Text(title,style: TextStyle(fontSize: 15, color: Colors.grey.shade600)),
                     SizedBox(
                       height: 3,
                     ),
-                    Text(date,style: TextStyle(fontSize: 10)),
+                    Text(date,style: TextStyle(fontSize: 15, color: Colors.grey.shade600)),
                   ],
                 ),
                 SizedBox(width: 3),
-                Icon(Icons.calendar_month_sharp, size: 30,)
+                Icon(Icons.calendar_month_sharp, size: 30, color: Colors.grey.shade600)
               ],
             ),
           ),
